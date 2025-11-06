@@ -1,0 +1,31 @@
+---
+- name: Deploy multimedia backup if requested
+  when: deploy_multimedia_backup | bool
+  block:
+    - name: Check if proxy Docker network exists
+      community.docker.docker_network_info:
+        name: "{{ proxy_network_name }}"
+      register: proxy_network_info
+
+    - name: Fail if proxy network doesn't exist
+      ansible.builtin.fail:
+        msg: "Required Docker network '{{ proxy_network_name }}' does not exist. Please create the network first through the core_infrastructure role."
+      when: not proxy_network_info.exists
+
+    - name: Create multimedia_backup directory
+      ansible.builtin.file:
+        path: /tmp/multimedia_backup
+        state: directory
+
+    - name: Include immich tasks
+      ansible.builtin.include_tasks: immich.yml
+      when: immich_data_path | length > 0 and immich_model_cache | length > 0 and
+            immich_db_data | length > 0 and immich_version | length > 0 and
+            vault_immich_db_name | length > 0 and vault_immich_db_username | length > 0 and
+            vault_immich_db_password | length > 0 and immich_domain_prefix | length > 0
+
+    - name: Delete multimedia_backup related files
+      ansible.builtin.file:
+        path: /tmp/multimedia_backup
+        state: absent
+      when: not debug_mode

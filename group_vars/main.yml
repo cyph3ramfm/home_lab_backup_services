@@ -1,0 +1,62 @@
+---
+# This file contains default variables for the Ansible playbook used to deploy the home lab.
+# Modify these variables as needed for your environment.
+
+######################### Global settings #########################
+timezone: "Europe/London"  # Set your local timezone for accurate log times
+debug_mode: false  # Set to true to enable to enable visibility container deployment files
+
+home_lab_network_name: home_lab
+proxy_network_name: proxy
+
+
+######################### Control flow #########################
+deploy_system_files_backup: true  # Set to true to deploy system files backup (restic)
+deploy_multimedia_backup: true  # Set to true to deploy multimedia backup services (immich)
+deploy_dashboards: true  # Set to true to deploy dashboards (homepage, glances, uptime-kuma)
+
+
+######################### NFS shares ##########################
+mount_point_docker_volumes: "/mnt/docker_volumes"  # Local mount point for NFS share for Docker volumes
+
+
+######################### System files backup #########################
+### Restic
+# Restic is a backup program that supports various backends, including local and cloud storage.
+restic_backup_storage_path: "{{mount_point_docker_volumes}}/{{ vault_device_name }}/restic/backups"	# Path to Restic backup storage destination
+restic_backup_restore_path: "{{mount_point_docker_volumes}}/{{ vault_device_name }}/restic/tmp-for-restore" # Path to Restic restore temporary directory
+restic_backup_source_path: /var/docker_data/ # Path to data for Restic to backup
+restic_repository_tag: "ubuntu-dev-vm-restic-backup" # Tag to identify the Restic backups
+
+######################### Multimedia backup #########################
+### Immich
+immich_data_path: "{{mount_point_docker_volumes}}/{{ vault_device_name }}/immich" # Path to Immich data
+immich_model_cache: /var/docker_data/immich/model-cache # Path to Immich model cache directory
+immich_db_data: /var/docker_data/immich/pgdata # Path to Immich database data
+immich_domain_prefix: immich # Domain prefix for Immich
+immich_version: "v2.2.2"  # Immich version tag (visit https://github.com/immich-app/immich/releases to find the latest version)
+
+######################### Dashboards #########################
+### Homepage
+homepage_config_path: /var/docker_data/homepage/config # Path to store homepage configuration files
+homepage_domain_prefix: homepage # Domain prefix for Homepage
+
+# Existing services data points relevant to Homepage
+pihole_domain_prefix: pihole # Domain prefix for Pi-hole
+portainer_domain_prefix: portainer  # Domain prefix for Portainer
+traefik_domain_prefix: traefik-dashboard  # Domain prefix for Traefik
+it_tools_domain_prefix: it-tools # Domain prefix for It-tools
+vs_code_server_domain_prefix: vs_code_server # Domain prefix for VS Code Server
+bazarr_domain_prefix: bazarr # Domain prefix for Bazarr
+jackett_domain_prefix: jackett # Domain prefix for Jackett
+radarr_domain_prefix: radarr # Domain prefix for Radarr
+sonarr_domain_prefix: sonarr # Domain prefix for Sonarr
+lidarr_domain_prefix: lidarr # Domain prefix for Lidarr
+transmission_domain_prefix: transmission # Domain prefix for Transmission
+plex_domain_prefix: plex # Domain prefix for Plex
+handbrake_domain_prefix: handbrake # Domain prefix for Handbrake
+gimp_domain_prefix: gimp # Domain prefix for Gimp
+wg_domain_prefix: wireguard-dashboard  # Domain prefix for WireGuard dashboard
+putty_domain_prefix: putty # Domain prefix for Putty
+glances_domain_prefix: glances # Domain prefix for Glances dashboard
+uptime_kuma_domain_prefix: uptime-kuma # Domain prefix for Uptime Kuma dashboard

@@ -1,0 +1,30 @@
+---
+- name: Deploy system files backup if requested
+  when: deploy_system_files_backup | bool
+  block:
+    - name: Check if home lab Docker network exists
+      community.docker.docker_network_info:
+        name: "{{ home_lab_network_name }}"
+      register: network_info
+
+    - name: Fail if home lab network doesn't exist
+      ansible.builtin.fail:
+        msg: "Required Docker network '{{ home_lab_network_name }}' does not exist. Please create the network first through the base_network_watchtower role."
+      when: not network_info.exists
+
+    - name: Create system_files_backup directory
+      ansible.builtin.file:
+        path: /tmp/system_files_backup
+        state: directory
+
+    - name: Include restic tasks
+      ansible.builtin.include_tasks: restic.yml
+      when: restic_backup_storage_path | length > 0 and restic_backup_restore_path | length > 0 and
+            restic_backup_source_path | length > 0 and vault_restic_password | length > 0 
+            and restic_repository_tag | length > 0
+
+    - name: Delete system_files_backup related files
+      ansible.builtin.file:
+        path: /tmp/system_files_backup
+        state: absent
+      when: not debug_mode

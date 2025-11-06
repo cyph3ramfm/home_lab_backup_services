@@ -1,0 +1,29 @@
+---
+- name: Check if restic container exists
+  community.docker.docker_container_info:
+    name: restic
+  register: restic_info
+
+- name: Check if restic-prune container exists
+  community.docker.docker_container_info:
+    name: restic-prune
+  register: restic_prune_info
+
+- name: Check if restic-check container exists
+  community.docker.docker_container_info:
+    name: restic-check
+  register: restic_check_info
+
+- name: Render restic compose file
+  ansible.builtin.template:
+    src: restic.yml.j2
+    dest: /tmp/system_files_backup/restic.yml
+    mode: '0644'
+  when: not restic_info.exists and not restic_prune_info.exists and not restic_check_info.exists
+
+- name: Deploy restic using Docker Compose
+  community.docker.docker_compose_v2:
+    project_src: /tmp/system_files_backup
+    files:
+      - restic.yml
+  when: not restic_info.exists and not restic_prune_info.exists and not restic_check_info.exists

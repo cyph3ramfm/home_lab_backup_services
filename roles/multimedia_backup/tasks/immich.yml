@@ -1,0 +1,72 @@
+- name: Check if Immich server container exists
+  community.docker.docker_container_info:
+    name: immich_server
+  register: immich_server_info
+
+- name: Check if Immich machine learning container exists
+  community.docker.docker_container_info:
+    name: immich_machine_learning
+  register: immich_ml_info
+  
+- name: Check if Immich redis container exists
+  community.docker.docker_container_info:
+    name: immich_redis
+  register: immich_redis_info
+
+- name: Check if Immich postgres container exists
+  community.docker.docker_container_info:
+    name: immich_postgres
+  register: immich_postgres_info
+
+- name: Ensure Immich data directories exist
+  ansible.builtin.file:
+    path: "{{ immich_data_path }}/{{ item }}"
+    state: directory    
+    mode: '0755'
+  loop:
+    - upload
+    - thumbs
+    - encoded-video
+    - profile
+    - backups
+    - library
+  when: not immich_server_info.exists and not immich_ml_info.exists and not immich_redis_info.exists and not immich_postgres_info.exists
+  become: true
+  
+- name: Render HW acceleration transcoding compose file
+  ansible.builtin.template:
+    src: hwaccel.transcoding.yml.j2
+    dest: /tmp/multimedia_backup/hwaccel.transcoding.yml
+    mode: '0644'
+  when: not immich_server_info.exists and not immich_ml_info.exists and not immich_redis_info.exists and not immich_postgres_info.exists
+
+- name: Render HW acceleration machine learning compose file
+  ansible.builtin.template:
+    src: hwaccel.ml.yml.j2
+    dest: /tmp/multimedia_backup/hwaccel.ml.yml
+    mode: '0644'
+  when: not immich_server_info.exists and not immich_ml_info.exists and not immich_redis_info.exists and not immich_postgres_info.exists
+
+- name: Render Immich compose file
+  ansible.builtin.template:
+    src: immich.yml.j2
+    dest: /tmp/multimedia_backup/immich.yml
+    mode: '0644'
+  when: not immich_server_info.exists and not immich_ml_info.exists and not immich_redis_info.exists and not immich_postgres_info.exists
+
+- name: Ensure vm.overcommit_memory is set to 1 permanently and applied
+  ansible.posix.sysctl:
+    name: vm.overcommit_memory
+    value: '1'
+    sysctl_set: yes
+    state: present
+    reload: yes
+  become: yes
+  when: not immich_server_info.exists and not immich_ml_info.exists and not immich_redis_info.exists and not immich_postgres_info.exists
+
+- name: Deploy Immich using Docker Compose
+  community.docker.docker_compose_v2:
+    project_src: /tmp/multimedia_backup
+    files:
+      - immich.yml
+  when: not immich_server_info.exists and not immich_ml_info.exists and not immich_redis_info.exists and not immich_postgres_info.exists

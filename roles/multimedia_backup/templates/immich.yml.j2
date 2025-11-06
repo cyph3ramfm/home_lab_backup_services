@@ -1,0 +1,111 @@
+---
+#+ Immich docker-compose template
+#+ See: https://immich.app/docs/install/docker-compose
+services:
+    immich-server:
+        image: "ghcr.io/immich-app/immich-server:{{ immich_version }}"
+        container_name: immich_server
+        restart: always
+        logging:
+            driver: "json-file"
+            options:
+                max-size: "50m"
+        volumes:
+            - {{ immich_data_path }}:/data
+            - /etc/localtime:/etc/localtime:ro
+        #ports:
+        #  - "2283:2283"
+        depends_on:
+            - immich_redis
+            - immich_postgres
+        healthcheck:
+            disable: false
+        environment:
+            DB_HOSTNAME: immich_postgres
+            DB_DATABASE_NAME: "{{ vault_immich_db_name }}"
+            DB_USERNAME: "{{ vault_immich_db_username }}"
+            DB_PASSWORD: "{{ vault_immich_db_password }}"
+            REDIS_HOSTNAME: immich_redis
+        labels:
+            - "traefik.enable=true"
+            - "traefik.http.routers.immich.entrypoints=http"
+            - "traefik.http.routers.immich.rule=Host(`{{ immich_domain_prefix }}.{{ vault_domain }}`)"
+            - "traefik.http.middlewares.immich-https-redirect.redirectscheme.scheme=https"
+            - "traefik.http.routers.immich.middlewares=immich-https-redirect"
+            - "traefik.http.routers.immich-secure.entrypoints=https"
+            - "traefik.http.routers.immich-secure.rule=Host(`{{ immich_domain_prefix }}.{{ vault_domain }}`)"
+            - "traefik.http.routers.immich-secure.tls=true"
+            - "traefik.http.routers.immich-secure.service=immich"
+            - "traefik.http.services.immich.loadbalancer.server.port=2283"
+            - "traefik.docker.network={{ proxy_network_name }}"
+            - "com.centurylinklabs.watchtower.enable=false"
+        networks:
+            - {{ proxy_network_name }}
+
+    immich-machine-learning:
+        # For hardware acceleration, use the appropriate tag (e.g. "{{ immich_version }}-cuda")
+        image: "ghcr.io/immich-app/immich-machine-learning:{{ immich_version }}"
+        container_name: immich_machine_learning
+        hostname: immich_machine_learning
+        restart: always
+        logging:
+            driver: "json-file"
+            options:
+                max-size: "50m"
+        # Uncomment and edit the hwaccel.ml.yml inclusion if using specific accel configs
+        # extends:
+        #   file: hwaccel.ml.yml
+        #   service: cpu
+        volumes:
+            - {{ immich_model_cache }}:/cache
+        healthcheck:
+            disable: false
+        labels:
+            - "com.centurylinklabs.watchtower.enable=false"
+        networks:
+            - {{ proxy_network_name }}
+
+    immich_redis:
+        # Confirm the redis image is appropriate for your deployment
+        image: docker.io/valkey/valkey:8@sha256:81db6d39e1bba3b3ff32bd3a1b19a6d69690f94a3954ec131277b9a26b95b3aa
+        container_name: immich_redis
+        hostname: immich_redis
+        restart: always
+        logging:
+            driver: "json-file"
+            options:
+                max-size: "50m"
+        healthcheck:
+            test: ["CMD", "redis-cli", "ping"]
+        labels:
+            - "com.centurylinklabs.watchtower.enable=false"
+        networks:
+            - {{ proxy_network_name }}
+
+    immich_postgres:
+        image: ghcr.io/immich-app/postgres:14-vectorchord0.4.3-pgvectors0.2.0@sha256:bcf63357191b76a916ae5eb93464d65c07511da41e3bf7a8416db519b40b1c23
+        container_name: immich_postgres
+        hostname: immich_postgres
+        restart: always
+        logging:
+            driver: "json-file"
+            options:
+                max-size: "50m"
+        environment:
+            POSTGRES_DB: "{{ vault_immich_db_name }}"
+            POSTGRES_USER: "{{ vault_immich_db_username }}"
+            POSTGRES_PASSWORD: "{{ vault_immich_db_password }}"
+            POSTGRES_INITDB_ARGS: "--data-checksums"
+            # Uncomment if DB storage is on HDD
+            # DB_STORAGE_TYPE: 'HDD'
+        volumes:
+            - {{ immich_db_data }}:/var/lib/postgresql/data
+        shm_size: 128mb
+        labels:
+            - "com.centurylinklabs.watchtower.enable=false"
+        networks:
+            - {{ proxy_network_name }}
+
+networks:
+    {{ proxy_network_name }}:
+        external: true

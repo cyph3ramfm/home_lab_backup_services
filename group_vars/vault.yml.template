@@ -1,0 +1,25 @@
+---
+######################### General settings #########################
+vault_device_name: my-device # Name of the device (anonymized placeholder)
+vault_domain: example.com # Domain url (replace with your domain)
+
+
+######################### System files backup #########################
+### Restic
+vault_restic_password: REPLACE_WITH_RESTIC_PASSWORD # Password for Restic backups (anonymized)
+
+
+######################### Multimedia backup #########################
+### Immich
+vault_immich_db_name: immich_db # Immich database name
+vault_immich_db_username: immich_user # Immich database username
+vault_immich_db_password: REPLACE_WITH_IMMICH_DB_PASSWORD # Immich database password (anonymized)
+
+
+######################### Dashboards #########################
+### Homepage
+vault_homepage_allowed_hosts: "{{ homepage_domain_prefix }}.{{ vault_domain }}" # List of allowed hosts for homepage
+vault_homepage_services_pihole_widget_key: "{{ vault_pi_hole_webpassword }}" # Pi-hole widget key for homepage. Follow these instructions to create: https://gethomepage.dev/widgets/services/pihole/
+
+# Existing services data points relevant to Homepage
+vault_pi_hole_webpassword: REPLACE_WITH_PIHOLE_PASSWORD # Web password for Pi-hole (anonymized)

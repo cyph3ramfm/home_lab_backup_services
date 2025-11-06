@@ -1,0 +1,81 @@
+---
+services:
+  backup:
+    image: mazzolino/restic
+    container_name: restic
+    hostname: restic
+    restart: unless-stopped
+    logging:
+      driver: "json-file"
+      options:
+          max-size: "50m"
+    environment:
+      RUN_ON_STARTUP: "true" #change as you wish
+      BACKUP_CRON: "0 */12 * * *" #this is twice daily, i.e., every 12 hours
+      RESTIC_REPOSITORY: /restic
+      RESTIC_PASSWORD: {{ vault_restic_password }}
+      RESTIC_BACKUP_SOURCES: /mnt/volumes
+      RESTIC_COMPRESSION: auto 
+      RESTIC_BACKUP_ARGS: >-
+        --tag {{ restic_repository_tag }}
+        --verbose
+      RESTIC_FORGET_ARGS: >- #change as required
+        --keep-last 7
+        --keep-daily 7
+        --keep-weekly 5
+        --keep-monthly 12
+      TZ: {{ timezone }}
+    volumes:
+      - {{ restic_backup_storage_path }}:/restic #change the left hand side to where you want to store the backups.
+      - {{ restic_backup_restore_path }}:/tmp-for-restore #USE THIS FOLDER FOR RESTORE - CAN VIEW EACH CONTAINER
+      - {{ restic_backup_source_path }}:/mnt/volumes:ro
+    security_opt:
+      - no-new-privileges:true
+    networks:
+      - {{ home_lab_network_name }}
+
+  prune:
+    image: mazzolino/restic
+    container_name: restic-prune
+    hostname: restic-prune
+    restart: unless-stopped
+    logging:
+      driver: "json-file"
+      options:
+          max-size: "50m"
+    environment:
+      RUN_ON_STARTUP: "true"
+      PRUNE_CRON: "0 0 4 * * *"
+      RESTIC_REPOSITORY: /restic
+      RESTIC_PASSWORD: {{ vault_restic_password }}
+      TZ: {{ timezone }}
+    security_opt:
+      - no-new-privileges:true
+    networks:
+      - {{ home_lab_network_name }}
+
+  check:
+    image: mazzolino/restic
+    container_name: restic-check
+    hostname: restic-check
+    restart: unless-stopped
+    logging:
+      driver: "json-file"
+      options:
+          max-size: "50m"
+    environment:
+      RUN_ON_STARTUP: "false"
+      CHECK_CRON: "0 15 5 * * *"
+      RESTIC_CHECK_ARGS: >-
+        --read-data-subset=10%
+      RESTIC_REPOSITORY: /restic
+      RESTIC_PASSWORD: {{ vault_restic_password }}
+      TZ: {{ timezone }}
+    security_opt:
+      - no-new-privileges:true
+    networks:
+      - {{ home_lab_network_name }}
+
+networks:
+  {{ home_lab_network_name }}:
+    external: true

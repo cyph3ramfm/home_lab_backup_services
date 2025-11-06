@@ -1,0 +1,31 @@
+---
+- name: Render Homepage services file
+  ansible.builtin.template:
+    src: services.yaml.j2
+    dest: /tmp/dashboards/services.yml
+    mode: '0644'
+
+- name: Deploy Homepage services configuration
+  ansible.builtin.template:
+    src: /tmp/dashboards/services.yml
+    dest: "{{ homepage_config_path }}/services.yaml"
+    mode: '0644'
+
+- name: Render Homepage compose file
+  ansible.builtin.template:
+    src: homepage.yml.j2
+    dest: /tmp/dashboards/homepage.yml
+    mode: '0644'
+
+- name: Deploy Homepage using Docker Compose
+  community.docker.docker_compose_v2:
+    project_src: /tmp/dashboards
+    files:
+      - homepage.yml
+
+- name: Show Homepage URL
+  ansible.builtin.debug:
+    msg:
+      - "Your updated Home Lab Dashboard including the Multimedia suite will be available at https://{{ homepage_domain_prefix }}.{{ vault_domain }}."
+      - "If not done previously, be sure to bookmark this URL for easy access."
+      
