@@ -4,6 +4,9 @@
 services:
     immich-server:
         image: "ghcr.io/immich-app/immich-server:{{ immich_version }}"
+        # extends:
+        #   file: hwaccel.transcoding.yml
+        #   service: cpu # set to one of [nvenc, quicksync, rkmpp, vaapi, vaapi-wsl] for accelerated transcoding
         container_name: immich_server
         restart: always
         logging:
@@ -43,7 +46,7 @@ services:
             - {{ proxy_network_name }}
 
     immich-machine-learning:
-        # For hardware acceleration, use the appropriate tag (e.g. "{{ immich_version }}-cuda")
+        # For hardware acceleration, add one of -[armnn, cuda, rocm, openvino, rknn] to the image tag (e.g. "{{ immich_version }}-cuda")
         image: "ghcr.io/immich-app/immich-machine-learning:{{ immich_version }}"
         container_name: immich_machine_learning
         hostname: immich_machine_learning
