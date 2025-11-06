@@ -26,7 +26,7 @@ Use those repositories to prepare target hosts (Docker, networks, SMB mounts, sy
 
 Key files and folders:
 
-- `deploy_home_lab_backup_services_playbook.yml` — top-level playbook that wires roles and loads `group_vars/*.yml`
+- `deploy_home_lab_backup_services.yml` — top-level playbook that wires roles and loads `group_vars/*.yml`
 - `group_vars/main.yml` — main configuration and feature flags
 - `group_vars/vault.yml.template` — vault template (secrets) — DO NOT COMMIT real `vault.yml`
 - `roles/` — role directories containing tasks and Jinja2 templates
@@ -81,14 +81,14 @@ Edit general configuration in `group_vars/main.yml` (mount points, domain prefix
 Deploy the playbook (sudo required on remote host):
 
 ```bash
-ansible-playbook -i inventory/hosts deploy_home_lab_backup_services_playbook.yml \
+ansible-playbook -i inventory/hosts deploy_home_lab_backup_services.yml \
   --vault-password-file ~/.vault_pass.txt --ask-become-pass
 ```
 
 For a dry-run / preview:
 
 ```bash
-ansible-playbook -i inventory/hosts deploy_home_lab_backup_services_playbook.yml \
+ansible-playbook -i inventory/hosts deploy_home_lab_backup_services.yml \
   --vault-password-file ~/.vault_pass.txt --ask-become-pass --check
 ```
 
